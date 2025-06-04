@@ -22,7 +22,7 @@
             max-width: 700px;
         }
         h1, h2 {
-            color: #0056b3; /* Adjusted title color */
+            color: #28a745; /* 초록색으로 변경 */
             text-align: center;
         }
         .start-screen button, #actionButton, .results-screen button {
@@ -117,7 +117,7 @@
         }
         #incorrectList .original-english {
             font-weight: bold;
-            color: #007bff; /* Blue for correct answer */
+            color: #28a745; /* 초록색으로 변경 */
         }
         #incorrectList .user-input-text {
             color: #dc3545; /* Red for user's incorrect input */
@@ -242,7 +242,6 @@
             sentenceTitleDiv.textContent = `문장 학습 (${(currentMaskingPercentage * 100).toFixed(0)}% 가리기)`;
             if (currentMaskingPercentage === 0) sentenceTitleDiv.textContent = `문장 학습 (전체 보기)`;
 
-
             if (currentMaskingPercentage === 0) {
                 englishSentenceDiv.textContent = sentencePair.english;
                 actionButton.textContent = '다음 문장';
@@ -327,7 +326,7 @@
                 feedbackDiv.textContent = '정답입니다!';
                 feedbackDiv.className = 'feedback correct';
             } else {
-                feedbackDiv.innerHTML = `틀렸습니다. <br>정답: <strong style="color: #007bff;">${sentencePair.english}</strong>`;
+                feedbackDiv.innerHTML = `틀렸습니다. <br>정답: <strong style="color: #28a745;">${sentencePair.english}</strong>`;
                 feedbackDiv.className = 'feedback incorrect';
                 incorrectAttempts.push({
                     korean: sentencePair.korean,
