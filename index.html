@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>영어 지문 암기 프로그램</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 700px;
+        }
+        h1, h2 {
+            color: #0056b3; /* Adjusted title color */
+            text-align: center;
+        }
+        .start-screen button, #actionButton, .results-screen button {
+            margin: 8px 5px;
+            padding: 12px 18px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+        .start-screen button:hover, #actionButton:hover, .results-screen button:hover {
+            background-color: #0056b3;
+        }
+        .learning-screen, .results-screen {
+            display: none; /* Initially hidden */
+        }
+        .sentence-area {
+            margin-top: 25px;
+            padding: 20px;
+            border: 1px solid #d1d9e6; /* Softer border */
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        .korean-sentence {
+            font-size: 1.1em;
+            color: #555;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        .english-sentence-display {
+            font-size: 1.25em;
+            font-weight: bold;
+            min-height: 40px; /* To prevent layout shifts */
+            line-height: 1.7;
+            color: #2c3e50; /* Darker text for English sentence */
+        }
+        .english-sentence-display input[type="text"].blank-input {
+            margin: 0 4px;
+            padding: 6px 8px;
+            font-size: 0.95em; /* Slightly smaller font for input */
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            width: 120px; /* Default width, can be adjusted */
+            box-sizing: border-box; /* Include padding and border in the element's total width and height */
+        }
+        .english-sentence-display input[type="text"].full-sentence-input {
+            width: 98%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+        .feedback {
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .correct {
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .incorrect {
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        .progress-text {
+            margin: 15px 0;
+            font-style: italic;
+            color: #6c757d; /* Bootstrap's text-muted color */
+            text-align: center;
+        }
+        #incorrectList {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        #incorrectList li {
+            background-color: #fff9f9;
+            border: 1px solid #f5c6cb;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        #incorrectList .original-english {
+            font-weight: bold;
+            color: #007bff; /* Blue for correct answer */
+        }
+        #incorrectList .user-input-text {
+            color: #dc3545; /* Red for user's incorrect input */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>영어 지문 암기 프로그램</h1>
+
+        <div id="startScreen" class="start-screen" style="display: block; text-align: center;">
+            <h2>학습할 난이도를 선택하세요:</h2>
+            <button onclick="startGame(0)">0% (전체 보기)</button>
+            <button onclick="startGame(0.1)">10% 가리기</button>
+            <button onclick="startGame(0.3)">30% 가리기</button>
+            <button onclick="startGame(0.5)">50% 가리기</button>
+            <button onclick="startGame(0.7)">70% 가리기</button>
+            <button onclick="startGame(1.0)">100% 가리기 (도전!)</button>
+        </div>
+
+        <div id="learningScreen" class="learning-screen">
+            <h2 id="sentenceTitle">문장 학습</h2>
+            <div id="progressText" class="progress-text"></div>
+            <div class="sentence-area">
+                <div id="koreanSentence" class="korean-sentence"></div>
+                <div id="englishSentenceDisplay" class="english-sentence-display">
+                    </div>
+            </div>
+            <div id="feedbackText" class="feedback"></div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="actionButton">다음</button>
+            </div>
+        </div>
+
+        <div id="resultsScreen" class="results-screen">
+            <h2>학습 결과</h2>
+            <p id="scoreText" style="font-size: 1.2em; text-align: center;"></p>
+            <h3><strong style="color: #dc3545;">틀린 문장</strong> 및 정답:</h3>
+            <ul id="incorrectList"></ul>
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="restartProgram()">처음으로 돌아가기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const passage = [
+            { english: "Hello! My name is Jisu.", korean: "안녕하세요! 제 이름은 지수입니다." },
+            { english: "I am a first-year middle school student.", korean: "저는 중학교 1학년 학생입니다." },
+            { english: "I usually wake up at 7:00 AM.", korean: "저는 보통 아침 7시에 일어납니다." },
+            { english: "I wash my face and eat breakfast with my family.", korean: "저는 세수를 하고 가족과 함께 아침을 먹습니다." },
+            { english: "My favorite breakfast is toast and milk.", korean: "제가 가장 좋아하는 아침 식사는 토스트와 우유입니다." },
+            { english: "I go to school by bus at 8:00 AM.", korean: "저는 아침 8시에 버스를 타고 학교에 갑니다." },
+            { english: "School starts at 8:30 AM.", korean: "수업은 아침 8시 30분에 시작합니다." },
+            { english: "My favorite subject is English.", korean: "제가 가장 좋아하는 과목은 영어입니다." },
+            { english: "I like learning new words.", korean: "저는 새로운 단어를 배우는 것을 좋아합니다." },
+            { english: "I also like P.E. class because I can play soccer with my friends.", korean: "친구들과 함께 축구를 할 수 있어서 체육 시간도 좋아합니다." },
+            { english: "After school, I go to a piano academy.", korean: "방과 후에 저는 피아노 학원에 갑니다." },
+            { english: "Then, I go home and do my homework.", korean: "그러고 나서 집에 가서 숙제를 합니다." },
+            { english: "In the evening, I have dinner with my family and watch TV.", korean: "저녁에는 가족과 함께 저녁을 먹고 TV를 봅니다." },
+            { english: "I go to bed around 10:00 PM.", korean: "저는 밤 10시쯤 잠자리에 듭니다." },
+            { english: "I like my school life!", korean: "저는 제 학교생활이 즐거워요!" }
+        ];
+
+        let currentSentences = [];
+        let currentSentenceIndex = 0;
+        let currentMaskingPercentage = 0;
+        let score = 0;
+        let incorrectAttempts = [];
+        let currentMaskedWordsInfo = []; // { originalWord: string, inputElement: HTMLElement }
+
+        const startScreen = document.getElementById('startScreen');
+        const learningScreen = document.getElementById('learningScreen');
+        const resultsScreen = document.getElementById('resultsScreen');
+
+        const koreanSentenceDiv = document.getElementById('koreanSentence');
+        const englishSentenceDiv = document.getElementById('englishSentenceDisplay');
+        const feedbackDiv = document.getElementById('feedbackText');
+        const actionButton = document.getElementById('actionButton');
+        const progressTextDiv = document.getElementById('progressText');
+        const sentenceTitleDiv = document.getElementById('sentenceTitle');
+
+
+        function shuffleArray(array) { // Optional: Shuffle sentences for varied learning
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function startGame(percentage) {
+            currentMaskingPercentage = percentage;
+            currentSentences = [...passage]; // Use a copy
+            // shuffleArray(currentSentences); // Uncomment to shuffle sentences each time
+            currentSentenceIndex = 0;
+            score = 0;
+            incorrectAttempts = [];
+
+            startScreen.style.display = 'none';
+            resultsScreen.style.display = 'none';
+            learningScreen.style.display = 'block';
+            feedbackDiv.textContent = '';
+            feedbackDiv.className = 'feedback';
+
+            displaySentence();
+        }
+
+        function displaySentence() {
+            if (currentSentenceIndex >= currentSentences.length) {
+                showResults();
+                return;
+            }
+
+            feedbackDiv.textContent = '';
+            feedbackDiv.className = 'feedback';
+            const sentencePair = currentSentences[currentSentenceIndex];
+            koreanSentenceDiv.textContent = sentencePair.korean;
+            englishSentenceDiv.innerHTML = ''; // Clear previous sentence
+            currentMaskedWordsInfo = [];
+
+            progressTextDiv.textContent = `문장 ${currentSentenceIndex + 1} / ${currentSentences.length}`;
+            sentenceTitleDiv.textContent = `문장 학습 (${(currentMaskingPercentage * 100).toFixed(0)}% 가리기)`;
+            if (currentMaskingPercentage === 0) sentenceTitleDiv.textContent = `문장 학습 (전체 보기)`;
+
+
+            if (currentMaskingPercentage === 0) {
+                englishSentenceDiv.textContent = sentencePair.english;
+                actionButton.textContent = '다음 문장';
+                actionButton.onclick = moveToNextSentence;
+            } else if (currentMaskingPercentage === 1.0) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'full-sentence-input';
+                input.placeholder = '전체 영어 문장을 입력하세요...';
+                englishSentenceDiv.appendChild(input);
+                actionButton.textContent = '정답 확인';
+                actionButton.onclick = checkAnswer;
+            } else {
+                const words = sentencePair.english.split(/(\s+)/); // Split by space, preserving spaces
+                const englishWordsOnly = words.filter(word => word.trim() !== '');
+                let numToMask = Math.floor(englishWordsOnly.length * currentMaskingPercentage);
+
+                if (currentMaskingPercentage > 0 && numToMask === 0 && englishWordsOnly.length > 0) {
+                    numToMask = 1; // Mask at least one word if percentage > 0
+                }
+
+                const maskedIndices = new Set();
+                while (maskedIndices.size < numToMask && maskedIndices.size < englishWordsOnly.length) {
+                    maskedIndices.add(Math.floor(Math.random() * englishWordsOnly.length));
+                }
+
+                let wordCounter = 0;
+                words.forEach(word => {
+                    if (word.trim() === '') { // if it's a space
+                        englishSentenceDiv.appendChild(document.createTextNode(word));
+                    } else {
+                        if (maskedIndices.has(wordCounter)) {
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.className = 'blank-input';
+                            input.setAttribute('data-original', word);
+                            // Estimate width based on word length
+                            input.style.width = Math.max(50, word.length * 9) + 'px'; 
+                            englishSentenceDiv.appendChild(input);
+                            currentMaskedWordsInfo.push({ originalWord: word, inputElement: input });
+                        } else {
+                            englishSentenceDiv.appendChild(document.createTextNode(word));
+                        }
+                        wordCounter++;
+                    }
+                });
+                actionButton.textContent = '정답 확인';
+                actionButton.onclick = checkAnswer;
+            }
+        }
+
+        function checkAnswer() {
+            const sentencePair = currentSentences[currentSentenceIndex];
+            let isCorrect = true;
+            let userInputForRecord = "";
+
+            if (currentMaskingPercentage === 1.0) {
+                const fullInput = englishSentenceDiv.querySelector('.full-sentence-input');
+                userInputForRecord = fullInput.value.trim();
+                // Normalize by removing common punctuation for a more lenient check, or use strict equality
+                const normalize = (str) => str.toLowerCase().replace(/[.,!?;:]/g, '');
+                if (normalize(userInputForRecord) !== normalize(sentencePair.english)) {
+                    isCorrect = false;
+                }
+            } else { // Partial masking
+                let tempUserInputArray = [];
+                currentMaskedWordsInfo.forEach(info => {
+                    const userAnswer = info.inputElement.value.trim();
+                    tempUserInputArray.push(userAnswer);
+                    if (userAnswer.toLowerCase() !== info.originalWord.toLowerCase()) {
+                        isCorrect = false;
+                        info.inputElement.style.borderColor = 'red';
+                    } else {
+                        info.inputElement.style.borderColor = 'green';
+                    }
+                });
+                userInputForRecord = tempUserInputArray.join(' / '); // To show what user entered in blanks
+            }
+
+            if (isCorrect) {
+                score++;
+                feedbackDiv.textContent = '정답입니다!';
+                feedbackDiv.className = 'feedback correct';
+            } else {
+                feedbackDiv.innerHTML = `틀렸습니다. <br>정답: <strong style="color: #007bff;">${sentencePair.english}</strong>`;
+                feedbackDiv.className = 'feedback incorrect';
+                incorrectAttempts.push({
+                    korean: sentencePair.korean,
+                    english: sentencePair.english,
+                    userInput: userInputForRecord,
+                    type: currentMaskingPercentage === 1.0 ? '전체 문장' : '부분 빈칸'
+                });
+            }
+
+            actionButton.textContent = '다음 문장으로';
+            actionButton.onclick = moveToNextSentence;
+        }
+
+        function moveToNextSentence() {
+            currentSentenceIndex++;
+            displaySentence();
+        }
+
+        function showResults() {
+            learningScreen.style.display = 'none';
+            resultsScreen.style.display = 'block';
+
+            const percentageScore = currentSentences.length > 0 ? (score / currentSentences.length) * 100 : 0;
+            document.getElementById('scoreText').textContent =
+                `총 ${currentSentences.length}문장 중 ${score}문장을 맞혔습니다! (${percentageScore.toFixed(1)}%)`;
+
+            const incorrectListUl = document.getElementById('incorrectList');
+            incorrectListUl.innerHTML = ''; // Clear previous results
+
+            if (incorrectAttempts.length === 0) {
+                const listItem = document.createElement('li');
+                listItem.textContent = '모든 문장을 정확히 맞혔습니다! 대단해요!';
+                listItem.style.color = "green";
+                listItem.style.textAlign = "center";
+                listItem.style.fontWeight = "bold";
+                incorrectListUl.appendChild(listItem);
+            } else {
+                incorrectAttempts.forEach(attempt => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `
+                        <p><strong>해석:</strong> ${attempt.korean}</p>
+                        <p><strong>정답:</strong> <span class="original-english">${attempt.english}</span></p>
+                        ${attempt.userInput ? `<p><strong>나의 답변 (${attempt.type}):</strong> <span class="user-input-text">${attempt.userInput}</span></p>` : ''}
+                    `;
+                    incorrectListUl.appendChild(listItem);
+                });
+            }
+        }
+
+        function restartProgram() {
+            resultsScreen.style.display = 'none';
+            startScreen.style.display = 'block';
+        }
+
+    </script>
+</body>
+</html>
